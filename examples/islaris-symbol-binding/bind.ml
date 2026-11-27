@@ -237,10 +237,15 @@ let show_trace label events state =
       label name state.term.code state.version state.event (smt_sort state.term.sort))
     selected_registers
 
+let entry_read trace name =
+  match Registers.find_opt name trace.reads with
+  | Some input -> input
+  | None -> failwith ("Missing B entry read for " ^ name)
+
 let show_link a b name =
   let out = Registers.find name a.registers in
   require (out.version > 0) ("Missing A exit write for " ^ name);
-  let input = Registers.find name b.reads in
+  let input = entry_read b name in
   let binding = Option.bind input.symbol (fun id -> IntMap.find_opt id b.aliases) in
   require (binding = Some out.term) ("Missing canonical entry binding for " ^ name);
   Printf.printf "A.%02d %s version %d %s -> B.%02d %s entry %s (%s); same-thread sequential transfer\n"
@@ -275,6 +280,15 @@ let write_trace path events =
     let trace = BareTree (TreeTrace (events, End)) in
     PPrint.ToChannel.pretty 0.9 100 output (Isla_lang.PP.pp_whole_tree trace);
     output_char output '\n')
+
+let change_entry_width trace events =
+  match (entry_read trace "r2").symbol with
+  | Some id when List.mem_assoc id trace.declarations ->
+      List.map (function
+        | Smt (DeclareConst (name, Ty_BitVec 64), annot) when name = id ->
+            Smt (DeclareConst (id, Ty_BitVec 32), annot)
+        | event -> event) events
+  | _ -> failwith "Expected a declared symbol for the B r2 entry"
 
 let queries file baseline normalized renamed missing wrong_b wrong_a =
   let output = open_out file in
@@ -321,7 +335,7 @@ let queries file baseline normalized renamed missing wrong_b wrong_a =
 
 let () =
   match Array.to_list Sys.argv with
-  | [_; trace_a; trace_b; output; fresh_b] ->
+  | _ :: trace_a :: trace_b :: output :: fresh_b :: width_output when List.length width_output <= 1 ->
       let events_a = parse trace_a and events_b = parse trace_b in
       let relation mode connection = compose mode connection events_a events_b in
       let a, b, baseline = relation `Baseline Sequential in
@@ -335,5 +349,6 @@ let () =
       show_trace "B" events_b b;
       List.iter (show_link a normalized_b) ["r2"; "PC"];
       write_trace fresh_b fresh;
+      List.iter (fun path -> write_trace path (change_entry_width b events_b)) width_output;
       queries output baseline normalized renamed missing wrong_b wrong_a
-  | _ -> failwith "usage: bind A.itl B.itl relations.smt2 B-fresh.itl"
+  | _ -> failwith "usage: bind A.itl B.itl relations.smt2 B-fresh.itl [B-wrong-width.itl]"

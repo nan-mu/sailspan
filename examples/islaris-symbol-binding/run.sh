@@ -33,7 +33,13 @@ out=$(cd -- "$1" && pwd)
   "$SAIL" --version
   z3 --version
   if [[ -f "$model/../.git" || -d "$model/../.git" ]]; then
-    git -C "$model" rev-parse HEAD
+    printf 'Model checkout %s\n' "$(git -C "$model" rev-parse HEAD)"
+  fi
+  printf 'Source pins for this checkout\n'
+  git -C "$repo" ls-tree HEAD -- third_party/isla third_party/isla-exporter third_party/islaris third_party/sail-ebpf
+  if [[ -f "$repo/third_party/islaris/islaris.opam" ]]; then
+    printf 'Islaris parser pin\n'
+    rg -F 'isla-lang.dev' "$repo/third_party/islaris/islaris.opam"
   fi
   shasum -a 256 "$out/ebpf.ir" "$SAIL" "$ISLA_PLUGIN" "$FOOTPRINT" "$ISLARIS" "$BINDER" \
     "$example/ebpf.toml" "$example/footprint.sail"
@@ -61,28 +67,13 @@ trace() {
 printf 'trace\tmemory_bytes\tisla_word\n' > "$out/inputs.tsv"
 trace A bf12000000000000
 trace B 0702000004000000
-"$BINDER" "$out/A.itl" "$out/B.itl" "$out/relations.smt2" "$out/B-fresh.itl" > "$out/binding.log"
+"$BINDER" "$out/A.itl" "$out/B.itl" "$out/relations.smt2" "$out/B-fresh.itl" \
+  "$out/B-wrong-width.itl" > "$out/binding.log"
 "$ISLARIS" --isla -n trace_B_fresh -o "$out/BFresh.v" "$out/B-fresh.itl" \
   > "$out/B-fresh.convert.log" 2>&1
 python3 "$example/check.py" "$out/relations.smt2" | tee "$out/check.log"
 
-# Width mutations are derived checks. Only the raw output above feeds the proof.
-python3 - "$out/B.itl" "$out/B-wrong-width.itl" <<'PY'
-from pathlib import Path
-import re
-import sys
-
-source = Path(sys.argv[1]).read_text()
-mutation, changes = re.subn(
-    r"(\(declare-const v\d+ \(_ BitVec )64(\)\))",
-    r"\g<1>32\2",
-    source,
-    count=1,
-)
-if changes != 1:
-    raise SystemExit("Could not derive the wrong-width trace")
-Path(sys.argv[2]).write_text(mutation)
-PY
+# The binder derives this mutation from B's parsed r2 entry.
 if "$BINDER" "$out/A.itl" "$out/B-wrong-width.itl" "$out/wrong-width.smt2" "$out/wrong-width-fresh.itl" \
     > "$out/wrong-width.log" 2>&1; then
   echo "The binding accepted the derived width mismatch" >&2

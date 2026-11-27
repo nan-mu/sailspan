@@ -1,17 +1,40 @@
-(trace
-  (assume-reg |host_endian| nil |HostLittleEndian|)
-  (define-enum |ebpf_host_endian| 2 (|HostLittleEndian| |HostBigEndian|))
-  (read-reg |host_endian| nil |HostLittleEndian|)
-  (define-enum |alu_code| 14 (|ADD| |SUB| |MUL| |DIV_OR_SDIV| |OR| |AND| |LSH| |RSH| |NEG| |MOD_OR_SMOD| |XOR| |MOV_OR_MOVSX| |ARSH| |END|))
-  (define-enum |src_kind| 2 (|SRC_K| |SRC_X|))
-  (define-enum |alu_class| 2 (|ALU32| |ALU64|))
-  (declare-const v0 (_ BitVec 32)) ; SourceLoc { file: 2, line1: 45, char1: 9, line2: 45, char2: 11 }
-  (read-reg |r2| nil v0)
-  (define-const v1 ((_ zero_extend 64) v0))
-  (define-const v2 (bvadd v1 #x00000000000000000000000000000004))
-  (define-const v3 ((_ extract 63 0) v2))
-  (write-reg |r2| nil v3)
-  (declare-const v4 (_ BitVec 128)) ; SourceLoc { file: 4, line1: 37, char1: 7, line2: 37, char2: 13 }
-  (read-reg |PC| nil v4)
-  (define-const v5 (bvadd v4 #x00000000000000000000000000000001))
-  (write-reg |PC| nil v5))
+(
+trace
+( assume-reg |host_endian| nil |HostLittleEndian| )
+( define-enum |ebpf_host_endian| 2 ( |HostLittleEndian| |HostBigEndian| ) )
+( read-reg |host_endian| nil |HostLittleEndian| )
+(
+  define-enum
+  |alu_code|
+  14
+  (
+  |ADD|
+  |SUB|
+  |MUL|
+  |DIV_OR_SDIV|
+  |OR|
+  |AND|
+  |LSH|
+  |RSH|
+  |NEG|
+  |MOD_OR_SMOD|
+  |XOR|
+  |MOV_OR_MOVSX|
+  |ARSH|
+  |END|
+  )
+  )
+( define-enum |src_kind| 2 ( |SRC_K| |SRC_X| ) )
+( define-enum |alu_class| 2 ( |ALU32| |ALU64| ) )
+( declare-const v0 (_ BitVec 32 ) )
+( read-reg |r2| nil v0 )
+( define-const v1 ( (_ zero_extend 64 ) v0 ) )
+( define-const v2 ( bvadd v1 #x00000000000000000000000000000004 ) )
+( define-const v3 ( (_ extract 63 0 ) v2 ) )
+( write-reg |r2| nil v3 )
+( declare-const v4 (_ BitVec 128 ) )
+( read-reg |PC| nil v4 )
+( define-const v5 ( bvadd v4 #x00000000000000000000000000000001 ) )
+( write-reg |PC| nil v5 )
+
+)

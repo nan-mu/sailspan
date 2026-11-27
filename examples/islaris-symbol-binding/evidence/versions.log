@@ -1,11 +1,18 @@
 Sail 0.20.1 (unknown branch @ unknown commit)
 Z3 version 5.1.0 - 64 bit
-767a79b954aeec91464303220a65f92008cbdb8f
-c09f0770f18c72f7ba0370da44a5d433038b817b45480de07a32508a4c8aec9f  /private/tmp/sailspan-pr2.IlamssJL/review-run/ebpf.ir
+Model checkout 767a79b954aeec91464303220a65f92008cbdb8f
+Source pins for this checkout
+160000 commit b8e614bda4a20e42c37d8b216853653133d04322	third_party/isla
+160000 commit f7426103f710f7c7f9191651c55b7a0320b87ce1	third_party/isla-exporter
+160000 commit c978e10f50db5c40f0fdf113f5f76a779782c6f9	third_party/islaris
+160000 commit 767a79b954aeec91464303220a65f92008cbdb8f	third_party/sail-ebpf
+Islaris parser pin
+  [ "isla-lang.dev" "git+https://github.com/rems-project/isla-lang.git#bda86c9f0bd28bbaa2481f50ddc986ede342805a" ]
+c09f0770f18c72f7ba0370da44a5d433038b817b45480de07a32508a4c8aec9f  /private/tmp/sailspan-pr2.IlamssJL/after-review/ebpf.ir
 14b1404c86f47e65aba166b9f3b03916e6d6ffa61973ffed7ef439d1a3a070bb  /private/tmp/sailspan-pr2.IlamssJL/upstream/sail-source/_build/default/src/bin/sail.exe
 c7525304da863ae6418b729a959b07c26457dc476405750505d73b9e1e3d543e  /Volumes/SSD/.t3/worktrees/sailspan/task-pr2-islaris-symbol-e9d262503a42e6ca/third_party/isla-exporter/isla-sail/_build/default/sail_plugin_isla.cmxs
 d88bfd585dbba2d01553b5ae1a8244d8826634b2e6d252430344b3f24ae8477e  /private/tmp/sailspan-pr2.IlamssJL/upstream/isla-source/target/debug/isla-footprint
 a3aa2026effe3497ec530b0f7652273db74a0f26d6fe73569898376d697a1287  /Volumes/SSD/.t3/worktrees/sailspan/task-pr2-islaris-symbol-e9d262503a42e6ca/third_party/islaris/_build/default/frontend/main.exe
-c62cee4b6b8d0bd605f6e27a776a3b5bac543701c7ecc8d8db2f282106da59aa  /Volumes/SSD/.t3/worktrees/sailspan/task-pr2-islaris-symbol-e9d262503a42e6ca/examples/islaris-symbol-binding/_build/default/bind.exe
+39c702eb66b61b53b2fbe45d96ba052251e3f941949e72c96a37e85d28a1a706  /Volumes/SSD/.t3/worktrees/sailspan/task-pr2-islaris-symbol-e9d262503a42e6ca/examples/islaris-symbol-binding/_build/default/bind.exe
 30cbac265f8db827dcd4697e4e80b4bf96945dadd879b7aa5df72646060e6203  /Volumes/SSD/.t3/worktrees/sailspan/task-pr2-islaris-symbol-e9d262503a42e6ca/examples/islaris-symbol-binding/ebpf.toml
 b8528b60607810af7a42afe61f5f1b6bb9099fa1f97bc9eab3c9f1cb4da34ae5  /Volumes/SSD/.t3/worktrees/sailspan/task-pr2-islaris-symbol-e9d262503a42e6ca/examples/islaris-symbol-binding/footprint.sail

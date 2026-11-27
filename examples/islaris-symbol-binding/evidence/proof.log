@@ -1,5 +1,13 @@
 The Coq Proof Assistant, version 8.19.0
 compiled with OCaml 4.14.2
+coqc -q -Q /Volumes/SSD/.t3/worktrees/sailspan/task-pr2-islaris-symbol-e9d262503a42e6ca/third_party/islaris/_build/default/theories isla A.v
+coqc -q -Q /Volumes/SSD/.t3/worktrees/sailspan/task-pr2-islaris-symbol-e9d262503a42e6ca/third_party/islaris/_build/default/theories isla B.v
+coqc -q -Q /Volumes/SSD/.t3/worktrees/sailspan/task-pr2-islaris-symbol-e9d262503a42e6ca/third_party/islaris/_build/default/theories isla BFresh.v
+Assumption output order
+mov64_wp
+add64_wp
+mov64_add64_wp
+coqc -q -Q /Volumes/SSD/.t3/worktrees/sailspan/task-pr2-islaris-symbol-e9d262503a42e6ca/third_party/islaris/_build/default/theories isla Proof.v
 Closed under the global context
 Closed under the global context
 Closed under the global context
