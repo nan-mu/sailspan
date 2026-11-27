@@ -1,0 +1,40 @@
+(
+trace
+( assume-reg |host_endian| nil |HostLittleEndian| )
+( define-enum |ebpf_host_endian| 2 ( |HostLittleEndian| |HostBigEndian| ) )
+( read-reg |host_endian| nil |HostLittleEndian| )
+(
+  define-enum
+  |alu_code|
+  14
+  (
+  |ADD|
+  |SUB|
+  |MUL|
+  |DIV_OR_SDIV|
+  |OR|
+  |AND|
+  |LSH|
+  |RSH|
+  |NEG|
+  |MOD_OR_SMOD|
+  |XOR|
+  |MOV_OR_MOVSX|
+  |ARSH|
+  |END|
+  )
+  )
+( define-enum |src_kind| 2 ( |SRC_K| |SRC_X| ) )
+( define-enum |alu_class| 2 ( |ALU32| |ALU64| ) )
+( declare-const v6 (_ BitVec 64 ) )
+( read-reg |r2| nil v6 )
+( define-const v7 ( (_ zero_extend 64 ) v6 ) )
+( define-const v8 ( bvadd v7 #x00000000000000000000000000000004 ) )
+( define-const v9 ( (_ extract 63 0 ) v8 ) )
+( write-reg |r2| nil v9 )
+( declare-const v10 (_ BitVec 128 ) )
+( read-reg |PC| nil v10 )
+( define-const v11 ( bvadd v10 #x00000000000000000000000000000001 ) )
+( write-reg |PC| nil v11 )
+
+)

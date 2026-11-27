@@ -1,0 +1,34 @@
+baseline implies ISA
+unsat
+ISA implies baseline (total input coverage)
+unsat
+baseline implies normalized
+unsat
+normalized implies baseline
+unsat
+renamed input changes the relation
+unsat
+missing r2 connection allows incorrect output
+sat
+((r1_in #xfffff77ff6a9ee68)
+ (r2_in #x0000000000000000)
+ (r2_out #xfe02eefe01f80008)
+ (pc_in #xfffffffffffffffffe01fffffffffffa)
+ (pc_out #xfffffffffffffffffe01fffffffffffc)
+ (endian_in HostLittleEndian))
+B exit in place of B entry allows incorrect output
+sat
+((r1_in #x0000000000000000)
+ (r2_in #x0000000000000000)
+ (r2_out #x0000000000000000)
+ (pc_in #xffffffffffffffffffffffffeffffffe)
+ (pc_out #xfffffffffffffffffffffffff0000000)
+ (endian_in HostLittleEndian))
+A entry in place of A exit allows incorrect output
+sat
+((r1_in #x0000000000000000)
+ (r2_in #xffeffffffffffffc)
+ (r2_out #xfff0000000000000)
+ (pc_in #xfffffffffffffffffffffffffffffffa)
+ (pc_out #xfffffffffffffffffffffffffffffffc)
+ (endian_in HostLittleEndian))

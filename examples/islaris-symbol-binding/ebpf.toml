@@ -1,0 +1,28 @@
+pc = "PC"
+default_sizeof = 8
+
+# Required by ISAConfig. The footprint command takes machine bytes and does
+# not invoke these tools or allocate any of the memory regions below.
+assembler = "as"
+objdump = "objdump"
+nm = "nm"
+linker = "ld"
+
+[mmu]
+page_table_base = "0x300000"
+page_size = "4096"
+s2_page_table_base = "0x400000"
+s2_page_size = "4096"
+
+[threads]
+base = "0x80100000"
+top = "0x80300000"
+stride = "0x10000"
+
+[symbolic_addrs]
+base = "0x80310000"
+top = "0x80410000"
+stride = "0x10"
+
+[registers.defaults]
+host_endian = "HostLittleEndian"
