@@ -1,0 +1,3 @@
+(executable
+ (name bind)
+ (libraries isla-lang pprint))

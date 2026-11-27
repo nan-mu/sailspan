@@ -1,0 +1,12 @@
+[submodule "sail-ebpf"]
+	path = third_party/sail-ebpf
+	url = https://github.com/OpenSourceVerif/sail-ebpf.git
+[submodule "isla"]
+	path = third_party/isla
+	url = https://github.com/rems-project/isla.git
+[submodule "isla-exporter"]
+	path = third_party/isla-exporter
+	url = https://github.com/rems-project/isla.git
+[submodule "islaris"]
+	path = third_party/islaris
+	url = https://github.com/rems-project/islaris.git

@@ -1,0 +1,81 @@
+A.01 ( assume-reg |host_endian| nil |HostLittleEndian| )
+A.02 ( define-enum |ebpf_host_endian| 2 ( |HostLittleEndian| |HostBigEndian| ) )
+A.03 ( read-reg |host_endian| nil |HostLittleEndian| )
+A.04 (
+define-enum
+|alu_code|
+14
+(
+|ADD|
+|SUB|
+|MUL|
+|DIV_OR_SDIV|
+|OR|
+|AND|
+|LSH|
+|RSH|
+|NEG|
+|MOD_OR_SMOD|
+|XOR|
+|MOV_OR_MOVSX|
+|ARSH|
+|END|
+)
+)
+A.05 ( define-enum |src_kind| 2 ( |SRC_K| |SRC_X| ) )
+A.06 ( define-enum |alu_class| 2 ( |ALU32| |ALU64| ) )
+A.07 ( declare-const v0 (_ BitVec 64 ) )
+A.08 ( read-reg |r1| nil v0 )
+A.09 ( write-reg |r2| nil v0 )
+A.10 ( declare-const v1 (_ BitVec 128 ) )
+A.11 ( read-reg |PC| nil v1 )
+A.12 ( define-const v2 ( bvadd v1 #x00000000000000000000000000000001 ) )
+A.13 ( write-reg |PC| nil v2 )
+A exit r1          r1_in version 0 from event 0 ((_ BitVec 64))
+A exit r2          A_v0 version 1 from event 9 ((_ BitVec 64))
+A exit PC          A_v2 version 1 from event 13 ((_ BitVec 128))
+A exit host_endian endian_in version 0 from event 0 (Endian)
+B.01 ( assume-reg |host_endian| nil |HostLittleEndian| )
+B.02 ( define-enum |ebpf_host_endian| 2 ( |HostLittleEndian| |HostBigEndian| ) )
+B.03 ( read-reg |host_endian| nil |HostLittleEndian| )
+B.04 (
+define-enum
+|alu_code|
+14
+(
+|ADD|
+|SUB|
+|MUL|
+|DIV_OR_SDIV|
+|OR|
+|AND|
+|LSH|
+|RSH|
+|NEG|
+|MOD_OR_SMOD|
+|XOR|
+|MOV_OR_MOVSX|
+|ARSH|
+|END|
+)
+)
+B.05 ( define-enum |src_kind| 2 ( |SRC_K| |SRC_X| ) )
+B.06 ( define-enum |alu_class| 2 ( |ALU32| |ALU64| ) )
+B.07 ( declare-const v0 (_ BitVec 64 ) )
+B.08 ( read-reg |r2| nil v0 )
+B.09 ( define-const v1 ( (_ zero_extend 64 ) v0 ) )
+B.10 ( define-const v2 ( bvadd v1 #x00000000000000000000000000000004 ) )
+B.11 ( define-const v3 ( (_ extract 63 0 ) v2 ) )
+B.12 ( write-reg |r2| nil v3 )
+B.13 ( declare-const v4 (_ BitVec 128 ) )
+B.14 ( read-reg |PC| nil v4 )
+B.15 ( define-const v5 ( bvadd v4 #x00000000000000000000000000000001 ) )
+B.16 ( write-reg |PC| nil v5 )
+B exit r1          r1_in version 0 from event 0 ((_ BitVec 64))
+B exit r2          B_v3 version 1 from event 12 ((_ BitVec 64))
+B exit PC          B_v5 version 1 from event 16 ((_ BitVec 128))
+B exit host_endian endian_in version 0 from event 0 (Endian)
+A.09 r2 version 1 A_v0 -> B.08 r2 entry B_v0 ((_ BitVec 64)); same-thread sequential transfer
+Normalized binding: B_v0 := A_v0
+A.13 PC version 1 A_v2 -> B.14 PC entry B_v4 ((_ BitVec 128)); same-thread sequential transfer
+Normalized binding: B_v4 := A_v2

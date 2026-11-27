@@ -1,0 +1,6 @@
+File "frontend/template.ml", line 74, characters 2-27:
+74 |   template_string : string;
+       ^^^^^^^^^^^^^^^^^^^^^^^^^
+Warning 69 [unused-field]: record field template_string is never read.
+(However, this field is used to build or mutate values.)
+Exit 0: frontend/main.exe, theories/isla.vo, examples/ite_test.vo
