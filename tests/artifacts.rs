@@ -117,3 +117,113 @@ fn jmp32_uses_its_immediate_and_resolves_only_within_its_section() {
     assert_eq!(nodes.boundaries[1].fallthrough, None);
     assert_eq!(nodes.nodes[0].instruction_ids, [2]); // Unreachable, but still owned.
 }
+
+#[test]
+fn calls_and_ja_are_boundaries_and_local_call_uses_the_elf_addend() {
+    use object::write::{Relocation, Symbol, SymbolSection};
+    use object::{RelocationFlags, SymbolFlags, SymbolKind, SymbolScope};
+    use sailspan::{Addend, BoundaryKind, Relocation as InstructionRelocation};
+
+    let mut elf = Object::new(BinaryFormat::Elf, Architecture::Bpf, Endianness::Little);
+    let caller = elf.add_section(Vec::new(), b"xdp".to_vec(), SectionKind::Text);
+    let callee = elf.add_section(Vec::new(), b".text".to_vec(), SectionKind::Text);
+    let exit = [0x95, 0, 0, 0, 0, 0, 0, 0];
+    elf.append_section_data(
+        caller,
+        &[
+            [0x85, 0x10, 0, 0, 0, 0, 0, 0], // local call with encoded addend 0
+            [0x85, 0x20, 0, 0, 0, 0, 0, 0], // external kernel call
+            [0x85, 0x30, 0, 0, 0, 0, 0, 0], // unsupported call source
+            [0x8d, 0, 0, 0, 3, 0, 0, 0],    // indirect call
+            [0x05, 0, 1, 0, 0, 0, 0, 0],    // ja +1
+            [0xb7, 0, 0, 0, 2, 0, 0, 0],
+            exit,
+        ]
+        .concat(),
+        8,
+    );
+    elf.append_section_data(callee, &[[0xb7, 0, 0, 0, 1, 0, 0, 0], exit].concat(), 8);
+    let symbol = elf.add_symbol(Symbol {
+        name: b"local_section".to_vec(),
+        value: 0,
+        size: 0,
+        kind: SymbolKind::Label,
+        scope: SymbolScope::Compilation,
+        weak: false,
+        section: SymbolSection::Section(callee),
+        flags: SymbolFlags::None,
+    });
+    elf.add_relocation(
+        caller,
+        Relocation {
+            offset: 0,
+            symbol,
+            addend: 0,
+            flags: RelocationFlags::Elf {
+                r_type: object::elf::R_BPF_64_32,
+            },
+        },
+    )
+    .unwrap();
+
+    let table = sailspan::disassemble(&elf.write().unwrap(), sailspan::Source::Synthetic).unwrap();
+    let nodes = sailspan::generate_nodes(&table).unwrap();
+    assert!(matches!(
+        &table.instructions[0].relocations[..],
+        [InstructionRelocation::Elf {
+            addend: Addend::Implicit { value: 8 },
+            ..
+        }]
+    ));
+    assert_eq!(nodes.boundaries[0].kind, BoundaryKind::LocalCall);
+    assert_eq!(nodes.boundaries[0].targets, [8]); // slot 1 in the callee
+    assert_eq!(nodes.boundaries[0].fallthrough, Some(1));
+    for (index, kind, diagnostic) in [
+        (1, BoundaryKind::KernelCall, "external resolution"),
+        (2, BoundaryKind::UnsupportedCall, "source 3"),
+        (3, BoundaryKind::UnsupportedCall, "dynamic"),
+    ] {
+        let boundary = &nodes.boundaries[index];
+        assert_eq!(boundary.kind, kind);
+        assert!(boundary.targets.is_empty());
+        assert_eq!(boundary.fallthrough, Some(index + 1));
+        assert!(boundary.unresolved.as_deref().unwrap().contains(diagnostic));
+    }
+    assert_eq!(nodes.boundaries[4].kind, BoundaryKind::UnconditionalJump);
+    assert_eq!(nodes.boundaries[4].targets, [6]);
+    assert_eq!(nodes.boundaries[4].fallthrough, None);
+}
+
+#[test]
+fn truncated_core_relocations_are_rejected() {
+    let mut elf = Object::new(BinaryFormat::Elf, Architecture::Bpf, Endianness::Little);
+    let text = elf.add_section(Vec::new(), b"xdp".to_vec(), SectionKind::Text);
+    elf.append_section_data(text, &[0x95, 0, 0, 0, 0, 0, 0, 0], 8);
+    let btf = elf.add_section(Vec::new(), b".BTF".to_vec(), SectionKind::ReadOnlyData);
+    let mut btf_data = [0x0001_eb9fu32, 24, 0, 0, 0, 5]
+        .map(u32::to_le_bytes)
+        .concat();
+    btf_data.extend(b"\0xdp\0");
+    elf.append_section_data(btf, &btf_data, 4);
+
+    let ext = elf.add_section(Vec::new(), b".BTF.ext".to_vec(), SectionKind::ReadOnlyData);
+    let ext_data = [
+        0x0001_eb9fu32,
+        32,
+        0,
+        0,
+        0,
+        0,
+        0,
+        12, // CO-RE subsection follows header
+        16,
+        1,
+        1, // xdp group declares one record but has no record bytes
+    ]
+    .map(u32::to_le_bytes)
+    .concat();
+    elf.append_section_data(ext, &ext_data, 4);
+    let err =
+        sailspan::disassemble(&elf.write().unwrap(), sailspan::Source::Synthetic).unwrap_err();
+    assert!(err.to_string().contains("truncated CO-RE records"));
+}

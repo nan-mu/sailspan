@@ -195,6 +195,13 @@ fn elf_relocation<'data>(
 
 // CO-RE records reference strings by offset in .BTF and instructions by byte offset
 // in the named executable section. The original type ID and access path are retained.
+const BTF_HEADER_SIZE: usize = 24;
+const BTF_STRING_SUBSECTION: usize = 16;
+const BTF_EXT_HEADER_WITHOUT_CORE: usize = 24;
+const BTF_EXT_HEADER_WITH_CORE: usize = 32;
+const BTF_EXT_CORE_SUBSECTION: usize = 24;
+const CORE_RECORD_MIN_SIZE: usize = 16;
+
 fn core_relocations<'data>(file: &impl Object<'data>) -> Result<BTreeMap<String, Vec<Relocation>>> {
     let mut result = BTreeMap::<String, Vec<Relocation>>::new();
     let Some(extension) = file.section_by_name(".BTF.ext") else {
@@ -202,11 +209,14 @@ fn core_relocations<'data>(file: &impl Object<'data>) -> Result<BTreeMap<String,
     };
     let extension = extension.data()?;
     let header = btf_header_size(extension)?;
-    if header == 24 {
+    if header == BTF_EXT_HEADER_WITHOUT_CORE {
         return Ok(result); // The original header predated the CO-RE subsection.
     }
-    ensure!(header >= 32, "invalid .BTF.ext header length");
-    let mut records = subsection(extension, header, 24)?;
+    ensure!(
+        header >= BTF_EXT_HEADER_WITH_CORE,
+        "invalid .BTF.ext header length"
+    );
+    let mut records = subsection(extension, header, BTF_EXT_CORE_SUBSECTION)?;
     if records.is_empty() {
         return Ok(result);
     }
@@ -216,14 +226,17 @@ fn core_relocations<'data>(file: &impl Object<'data>) -> Result<BTreeMap<String,
         .context("CO-RE records require .BTF strings")?
         .data()?;
     let btf_header = btf_header_size(btf)?;
-    ensure!(btf_header >= 24, "invalid .BTF header length");
-    let strings = subsection(btf, btf_header, 16)?;
-    let record_size = word(records, 0)? as usize;
-    ensure!(record_size >= 16, "invalid CO-RE record size");
+    ensure!(btf_header >= BTF_HEADER_SIZE, "invalid .BTF header length");
+    let strings = subsection(btf, btf_header, BTF_STRING_SUBSECTION)?;
+    let record_size = le_u32(records, 0)? as usize;
+    ensure!(
+        record_size >= CORE_RECORD_MIN_SIZE,
+        "invalid CO-RE record size"
+    );
     records = &records[4..];
     while !records.is_empty() {
-        let name_offset = word(records, 0)?;
-        let count = word(records, 4)? as usize;
+        let name_offset = le_u32(records, 0)?;
+        let count = le_u32(records, 4)? as usize;
         let length = count
             .checked_mul(record_size)
             .context("CO-RE record count overflow")?;
@@ -234,11 +247,11 @@ fn core_relocations<'data>(file: &impl Object<'data>) -> Result<BTreeMap<String,
         let section = btf_string(strings, name_offset)?.to_owned();
         let entries = result.entry(section).or_default();
         for record in group.chunks_exact(record_size) {
-            let access_string_offset = word(record, 8)?;
+            let access_string_offset = le_u32(record, 8)?;
             entries.push(Relocation::Core {
-                byte_offset: u64::from(word(record, 0)?),
-                kind: word(record, 12)?,
-                type_id: word(record, 4)?,
+                byte_offset: u64::from(le_u32(record, 0)?),
+                kind: le_u32(record, 12)?,
+                type_id: le_u32(record, 4)?,
                 access_string_offset,
                 access_string: btf_string(strings, access_string_offset)?.to_owned(),
             });
@@ -252,12 +265,12 @@ fn btf_header_size(bytes: &[u8]) -> Result<usize> {
         bytes.starts_with(&[0x9f, 0xeb, 1]),
         "invalid BTF magic or version"
     );
-    let header = word(bytes, 4)? as usize;
+    let header = le_u32(bytes, 4)? as usize;
     ensure!(header <= bytes.len(), "truncated BTF header");
     Ok(header)
 }
 
-fn word(bytes: &[u8], offset: usize) -> Result<u32> {
+fn le_u32(bytes: &[u8], offset: usize) -> Result<u32> {
     let field = bytes
         .get(offset..offset + 4)
         .context("truncated BTF field")?;
@@ -265,8 +278,8 @@ fn word(bytes: &[u8], offset: usize) -> Result<u32> {
 }
 
 fn subsection(bytes: &[u8], header: usize, field: usize) -> Result<&[u8]> {
-    let offset = word(bytes, field)? as usize;
-    let length = word(bytes, field + 4)? as usize;
+    let offset = le_u32(bytes, field)? as usize;
+    let length = le_u32(bytes, field + 4)? as usize;
     bytes[header..]
         .get(offset..)
         .and_then(|tail| tail.get(..length))

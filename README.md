@@ -7,7 +7,8 @@ Targets without evaluating branches.
 
 ## Generate the firewall artifacts
 
-Install Rust and make `7z` available on PATH. Download the pinned release asset,
+The release run used Rust/Cargo 1.100.0, p7zip 17.05 as `7z` on PATH,
+and Homebrew LLVM 23.1.1 for comparison. Download the pinned release asset,
 then run Sailspan using a fresh output directory.
 
 ```sh
