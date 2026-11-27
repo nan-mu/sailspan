@@ -1,0 +1,122 @@
+{
+  "schema_version": 2,
+  "instruction_table_sha256": "e351c521a1cbd19b8750f5a07cde9f8dd4a7eb8aaec0b64afb86b457e3ad232a",
+  "nodes": [
+    {
+      "id": "n0",
+      "instruction_ids": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    {
+      "id": "n1",
+      "instruction_ids": [
+        6
+      ]
+    },
+    {
+      "id": "n2",
+      "instruction_ids": [
+        8
+      ]
+    },
+    {
+      "id": "n3",
+      "instruction_ids": [
+        10,
+        11,
+        12
+      ]
+    },
+    {
+      "id": "n4",
+      "instruction_ids": [
+        14,
+        15
+      ]
+    },
+    {
+      "id": "n5",
+      "instruction_ids": [
+        17,
+        18,
+        19,
+        20
+      ]
+    }
+  ],
+  "boundaries": [
+    {
+      "id": "b0",
+      "kind": "conditional_jump",
+      "instruction_ids": [
+        5
+      ],
+      "targets": [
+        21
+      ],
+      "fallthrough": 6,
+      "unresolved": null
+    },
+    {
+      "id": "b1",
+      "kind": "conditional_jump",
+      "instruction_ids": [
+        7
+      ],
+      "targets": [
+        21
+      ],
+      "fallthrough": 8,
+      "unresolved": null
+    },
+    {
+      "id": "b2",
+      "kind": "conditional_jump",
+      "instruction_ids": [
+        9
+      ],
+      "targets": [
+        21
+      ],
+      "fallthrough": 10,
+      "unresolved": null
+    },
+    {
+      "id": "b3",
+      "kind": "helper",
+      "instruction_ids": [
+        13
+      ],
+      "targets": [],
+      "fallthrough": 14,
+      "unresolved": null
+    },
+    {
+      "id": "b4",
+      "kind": "conditional_jump",
+      "instruction_ids": [
+        16
+      ],
+      "targets": [
+        21
+      ],
+      "fallthrough": 17,
+      "unresolved": null
+    },
+    {
+      "id": "b5",
+      "kind": "exit",
+      "instruction_ids": [
+        21
+      ],
+      "targets": [],
+      "fallthrough": null,
+      "unresolved": null
+    }
+  ]
+}
