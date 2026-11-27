@@ -58,7 +58,7 @@ pub(crate) fn decode(bytes: &[u8]) -> Result<(u8, String, Option<Flow>)> {
                 immediate,
             }),
         ),
-        (5, 0x80) if opcode == 0x8d => (format!("callx r{immediate}"), Some(Flow::IndirectCall)),
+        (5, 0x80) if opcode == 0x8d => (format!("callx r{dst}"), Some(Flow::IndirectCall)),
         (5, 0x90) if opcode == 0x95 => ("exit".into(), Some(Flow::Exit)),
         (5 | 6, _) => {
             let condition = match operation {

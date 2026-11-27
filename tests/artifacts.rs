@@ -131,10 +131,11 @@ fn calls_and_ja_are_boundaries_and_local_call_uses_the_elf_addend() {
     elf.append_section_data(
         caller,
         &[
-            [0x85, 0x10, 0, 0, 0, 0, 0, 0], // local call with encoded addend 0
+            [0x85, 0x10, 0, 0, 0, 0, 0, 0], // section symbol and an implicit addend of 8
+            [0x85, 0x10, 0, 0, 0xff, 0xff, 0xff, 0xff], // nonzero function symbol, zero addend
             [0x85, 0x20, 0, 0, 0, 0, 0, 0], // external kernel call
             [0x85, 0x30, 0, 0, 0, 0, 0, 0], // unsupported call source
-            [0x8d, 0, 0, 0, 3, 0, 0, 0],    // indirect call
+            [0x8d, 3, 0, 0, 0, 0, 0, 0],    // indirect call
             [0x05, 0, 1, 0, 0, 0, 0, 0],    // ja +1
             [0xb7, 0, 0, 0, 2, 0, 0, 0],
             exit,
@@ -143,45 +144,58 @@ fn calls_and_ja_are_boundaries_and_local_call_uses_the_elf_addend() {
         8,
     );
     elf.append_section_data(callee, &[[0xb7, 0, 0, 0, 1, 0, 0, 0], exit].concat(), 8);
-    let symbol = elf.add_symbol(Symbol {
-        name: b"local_section".to_vec(),
-        value: 0,
-        size: 0,
-        kind: SymbolKind::Label,
-        scope: SymbolScope::Compilation,
+    let section_symbol = elf.section_symbol(callee);
+    let function_symbol = elf.add_symbol(Symbol {
+        name: b"callee".to_vec(),
+        value: 8,
+        size: 8,
+        kind: SymbolKind::Text,
+        scope: SymbolScope::Linkage,
         weak: false,
         section: SymbolSection::Section(callee),
         flags: SymbolFlags::None,
     });
-    elf.add_relocation(
-        caller,
-        Relocation {
-            offset: 0,
-            symbol,
-            addend: 0,
-            flags: RelocationFlags::Elf {
-                r_type: object::elf::R_BPF_64_32,
+    for (offset, symbol) in [(0, section_symbol), (8, function_symbol)] {
+        elf.add_relocation(
+            caller,
+            Relocation {
+                offset,
+                symbol,
+                addend: 0,
+                flags: RelocationFlags::Elf {
+                    r_type: object::elf::R_BPF_64_32,
+                },
             },
-        },
-    )
-    .unwrap();
+        )
+        .unwrap();
+    }
 
     let table = sailspan::disassemble(&elf.write().unwrap(), sailspan::Source::Synthetic).unwrap();
     let nodes = sailspan::generate_nodes(&table).unwrap();
-    assert!(matches!(
-        &table.instructions[0].relocations[..],
-        [InstructionRelocation::Elf {
-            addend: Addend::Implicit { value: 8 },
-            ..
-        }]
-    ));
-    assert_eq!(nodes.boundaries[0].kind, BoundaryKind::LocalCall);
-    assert_eq!(nodes.boundaries[0].targets, [8]); // slot 1 in the callee
-    assert_eq!(nodes.boundaries[0].fallthrough, Some(1));
+    for (index, expected_addend, expected_symbol_value) in [(0, 8, 0), (1, 0, 8)] {
+        let [
+            InstructionRelocation::Elf {
+                addend: Addend::Implicit { value },
+                symbol: Some(symbol),
+                ..
+            },
+        ] = table.instructions[index].relocations.as_slice()
+        else {
+            panic!("missing call relocation at instruction {index}");
+        };
+        assert_eq!(
+            (*value, symbol.value),
+            (expected_addend, expected_symbol_value)
+        );
+        assert_eq!(nodes.boundaries[index].kind, BoundaryKind::LocalCall);
+        assert_eq!(nodes.boundaries[index].targets, [9]); // slot 1 in the callee
+        assert_eq!(nodes.boundaries[index].fallthrough, Some(index + 1));
+    }
+    assert_eq!(table.instructions[4].assembly, "callx r3");
     for (index, kind, diagnostic) in [
-        (1, BoundaryKind::KernelCall, "external resolution"),
-        (2, BoundaryKind::UnsupportedCall, "source 3"),
-        (3, BoundaryKind::UnsupportedCall, "dynamic"),
+        (2, BoundaryKind::KernelCall, "external resolution"),
+        (3, BoundaryKind::UnsupportedCall, "source 3"),
+        (4, BoundaryKind::UnsupportedCall, "dynamic"),
     ] {
         let boundary = &nodes.boundaries[index];
         assert_eq!(boundary.kind, kind);
@@ -189,9 +203,9 @@ fn calls_and_ja_are_boundaries_and_local_call_uses_the_elf_addend() {
         assert_eq!(boundary.fallthrough, Some(index + 1));
         assert!(boundary.unresolved.as_deref().unwrap().contains(diagnostic));
     }
-    assert_eq!(nodes.boundaries[4].kind, BoundaryKind::UnconditionalJump);
-    assert_eq!(nodes.boundaries[4].targets, [6]);
-    assert_eq!(nodes.boundaries[4].fallthrough, None);
+    assert_eq!(nodes.boundaries[5].kind, BoundaryKind::UnconditionalJump);
+    assert_eq!(nodes.boundaries[5].targets, [7]);
+    assert_eq!(nodes.boundaries[5].fallthrough, None);
 }
 
 #[test]
